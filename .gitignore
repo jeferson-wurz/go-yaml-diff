@@ -6,7 +6,8 @@
 *.exe~
 *.dll
 *.so
-*.dylib
+*.dylib`
+go-yaml-diff
 
 # Test binary, built with `go test -c`
 *.test
