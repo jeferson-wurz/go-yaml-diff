@@ -1,7 +1,6 @@
 # go-yaml-diff
 
 [![Go Version](https://img.shields.io/badge/go-1.23%2B-blue)](https://golang.org/doc/go1.23)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 `go-yaml-diff` is a command-line tool written in Go that allows you to compare two YAML files and highlight the semantic differences between them. This tool is designed to help developers and system administrators identify discrepancies in YAML configurations quickly and easily.
 
