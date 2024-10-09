@@ -13,39 +13,39 @@ import (
 )
 
 func main() {
-	// Imprime o cabeçalho estilizado do programa
-	printHeader()
+	// Display the styled header of the program
+	displayHeader()
 
-	// Define os nomes dos arquivos YAML a serem comparados
-	file1Name := "examples/file1.yaml"
-	file2Name := "examples/file2.yaml"
+	// Define the names of the YAML files to be compared
+	file1Path := "examples/file1.yaml"
+	file2Path := "examples/file2.yaml"
 
-	// Lê o conteúdo dos arquivos YAML
-	file1Content, err := readFile(file1Name)
+	// Read the content of the YAML files
+	file1Content, err := readFile(file1Path)
 	if err != nil {
-		log.Fatalf("Erro ao ler o arquivo %s: %v", file1Name, err)
+		log.Fatalf("Error reading file %s: %v", file1Path, err)
 	}
 
-	file2Content, err := readFile(file2Name)
+	file2Content, err := readFile(file2Path)
 	if err != nil {
-		log.Fatalf("Erro ao ler o arquivo %s: %v", file2Name, err)
+		log.Fatalf("Error reading file %s: %v", file2Path, err)
 	}
 
-	// Converte o conteúdo dos arquivos em documentos YAML
-	docs1 := parseYAMLDocuments(file1Content)
-	docs2 := parseYAMLDocuments(file2Content)
+	// Parse the content of the files into YAML documents
+	yamlDocs1 := parseYAMLDocuments(file1Content)
+	yamlDocs2 := parseYAMLDocuments(file2Content)
 
-	// Cria um mapeamento dos documentos por "kind" e "metadata.name"
-	map1 := mapYAMLDocuments(docs1)
-	map2 := mapYAMLDocuments(docs2)
+	// Create a mapping of the documents by "kind" and "metadata.name"
+	yamlMap1 := mapYAMLDocuments(yamlDocs1)
+	yamlMap2 := mapYAMLDocuments(yamlDocs2)
 
-	// Compara os documentos YAML e exibe as diferenças encontradas
+	// Compare the YAML documents and display the differences found
 	fmt.Printf("\nDifferences found between the YAML files:\n\n")
-	compareYAMLMaps(map1, map2)
+	compareYAMLMaps(yamlMap1, yamlMap2)
 }
 
-// Função para imprimir o cabeçalho estilizado do programa
-func printHeader() {
+// Display the styled header of the program
+func displayHeader() {
 	blue := color.New(color.FgBlue, color.Bold).SprintFunc()
 	green := color.New(color.FgGreen, color.Bold).SprintFunc()
 	fmt.Println(blue("========================================"))
@@ -53,53 +53,53 @@ func printHeader() {
 	fmt.Println(blue("========================================"))
 }
 
-// Função para ler o conteúdo de um arquivo
-func readFile(filename string) (string, error) {
-	data, err := ioutil.ReadFile(filename)
+// Read the content of a file and return it as a string
+func readFile(filePath string) (string, error) {
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return "", err
 	}
 	return string(data), nil
 }
 
-// Função para analisar múltiplos documentos YAML em uma lista de interfaces
+// Parse multiple YAML documents into a slice of interfaces
 func parseYAMLDocuments(content string) []interface{} {
-	var docs []interface{}
+	var documents []interface{}
 	decoder := yaml.NewDecoder(strings.NewReader(content))
 	for {
 		var doc interface{}
 		if err := decoder.Decode(&doc); err != nil {
 			break
 		}
-		docs = append(docs, doc)
+		documents = append(documents, doc)
 	}
-	return docs
+	return documents
 }
 
-// Função para mapear documentos YAML por "kind" e "metadata.name"
-func mapYAMLDocuments(docs []interface{}) map[string]interface{} {
+// Map YAML documents by "kind" and "metadata.name" to create a unique key for each object
+func mapYAMLDocuments(documents []interface{}) map[string]interface{} {
 	result := make(map[string]interface{})
-	for _, doc := range docs {
-		if obj, ok := doc.(map[string]interface{}); ok {
-			kind := obj["kind"]
-			metadata, hasMetadata := obj["metadata"].(map[string]interface{})
+	for _, doc := range documents {
+		if yamlObject, ok := doc.(map[string]interface{}); ok {
+			kind := yamlObject["kind"]
+			metadata, hasMetadata := yamlObject["metadata"].(map[string]interface{})
 			name := ""
 			if hasMetadata {
 				name = metadata["name"].(string)
 			}
 			if kind != nil && name != "" {
 				key := fmt.Sprintf("%s/%s", kind, name)
-				result[key] = obj
+				result[key] = yamlObject
 			}
 		}
 	}
 	return result
 }
 
-// Função para comparar dois mapas de documentos YAML e imprimir diferenças com contexto
-func compareYAMLMaps(map1, map2 map[string]interface{}) {
-	for key, obj1 := range map1 {
-		if obj2, exists := map2[key]; exists {
+// Compare two maps of YAML documents and print differences with context
+func compareYAMLMaps(yamlMap1, yamlMap2 map[string]interface{}) {
+	for key, obj1 := range yamlMap1 {
+		if obj2, exists := yamlMap2[key]; exists {
 			fmt.Printf("Comparing object %s:\n", key)
 			compareYAMLWithContext(obj1, obj2, "", key)
 		} else {
@@ -108,25 +108,25 @@ func compareYAMLMaps(map1, map2 map[string]interface{}) {
 		fmt.Println("---")
 	}
 
-	// Verifica objetos que estão presentes apenas em map2
-	for key := range map2 {
-		if _, exists := map1[key]; !exists {
+	// Check for objects that are only present in the second map
+	for key := range yamlMap2 {
+		if _, exists := yamlMap1[key]; !exists {
 			fmt.Printf("Object missing in file 1: %s\n", key)
 			fmt.Println("---")
 		}
 	}
 }
 
-// Função para comparar dados YAML e imprimir as diferenças com linhas de contexto, removendo redundâncias
+// Compare YAML data and print differences with context, avoiding redundant information
 func compareYAMLWithContext(data1, data2 interface{}, indent, parentPath string) {
 	red := color.New(color.FgRed).SprintFunc()
 	green := color.New(color.FgGreen).SprintFunc()
 
-	map1, ok1 := data1.(map[string]interface{})
-	map2, ok2 := data2.(map[string]interface{})
+	map1, isMap1 := data1.(map[string]interface{})
+	map2, isMap2 := data2.(map[string]interface{})
 
-	// Comparação de mapas (objetos)
-	if ok1 && ok2 {
+	// Compare maps (objects) and identify differences
+	if isMap1 && isMap2 {
 		for key := range map1 {
 			value1 := map1[key]
 			value2, exists := map2[key]
@@ -135,7 +135,7 @@ func compareYAMLWithContext(data1, data2 interface{}, indent, parentPath string)
 			if exists && !reflect.DeepEqual(value1, value2) {
 				if isLeafNode(value1) && isLeafNode(value2) {
 					fmt.Printf("Found difference on [%s]\n", currentPath)
-					printContext(red(fmt.Sprintf("- %s: %v", key, value1)), green(fmt.Sprintf("+ %s: %v", key, value2)), indent)
+					printDifferenceContext(red(fmt.Sprintf("- %s: %v", key, value1)), green(fmt.Sprintf("+ %s: %v", key, value2)), indent)
 				} else {
 					compareYAMLWithContext(value1, value2, indent+"  ", currentPath)
 				}
@@ -145,10 +145,10 @@ func compareYAMLWithContext(data1, data2 interface{}, indent, parentPath string)
 		}
 	}
 
-	// Comparação de listas (arrays)
-	list1, okList1 := data1.([]interface{})
-	list2, okList2 := data2.([]interface{})
-	if okList1 && okList2 {
+	// Compare lists (arrays) and identify differences
+	list1, isList1 := data1.([]interface{})
+	list2, isList2 := data2.([]interface{})
+	if isList1 && isList2 {
 		for i := 0; i < max(len(list1), len(list2)); i++ {
 			var item1, item2 interface{}
 			if i < len(list1) {
@@ -162,7 +162,7 @@ func compareYAMLWithContext(data1, data2 interface{}, indent, parentPath string)
 			if !reflect.DeepEqual(item1, item2) {
 				if isLeafNode(item1) && isLeafNode(item2) {
 					fmt.Printf("Found difference on [%s]\n", itemPath)
-					printContext(red(fmt.Sprintf("- %v", item1)), green(fmt.Sprintf("+ %v", item2)), indent)
+					printDifferenceContext(red(fmt.Sprintf("- %v", item1)), green(fmt.Sprintf("+ %v", item2)), indent)
 				} else {
 					compareYAMLWithContext(item1, item2, indent+"  ", itemPath)
 				}
@@ -171,13 +171,13 @@ func compareYAMLWithContext(data1, data2 interface{}, indent, parentPath string)
 	}
 }
 
-// Função para exibir as linhas de contexto ao redor das diferenças
-func printContext(diff1, diff2, indent string) {
+// Display the context lines around the differences
+func printDifferenceContext(diff1, diff2, indent string) {
 	fmt.Printf("%s\n", diff1)
 	fmt.Printf("%s\n", diff2)
 }
 
-// Função para formatar valores YAML com a indentação apropriada
+// Format YAML values with appropriate indentation
 func formatYAMLValue(value interface{}, indent string) string {
 	var buffer bytes.Buffer
 	encoder := yaml.NewEncoder(&buffer)
@@ -191,14 +191,14 @@ func formatYAMLValue(value interface{}, indent string) string {
 	return strings.Join(lines, "\n")
 }
 
-// Função para determinar se um nó é uma folha (valor escalar)
+// Determine if a node is a leaf (scalar value)
 func isLeafNode(value interface{}) bool {
 	_, isMap := value.(map[string]interface{})
 	_, isSlice := value.([]interface{})
 	return !isMap && !isSlice
 }
 
-// Função para obter o máximo de dois inteiros
+// Get the maximum of two integers
 func max(a, b int) int {
 	if a > b {
 		return a
